@@ -20,9 +20,9 @@ async function startScan(targetInputId){
   box.innerHTML = `
     <div style="position:relative;">
       <video id="ocrVideo" autoplay playsinline muted style="width:100%;display:block;border-radius:8px;background:#000;"></video>
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:70px;border:2px solid var(--accent);border-radius:6px;pointer-events:none;"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:85%;height:150px;border:2px solid var(--accent);border-radius:6px;pointer-events:none;"></div>
     </div>
-    <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin-top:6px;">מקמי את המספר המודפס (לא את קווי הברקוד) בתוך המסגרת הכתומה</div>
+    <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin-top:6px;">מקמי את כל התווית (הברקוד + המספר מתחתיו) בתוך המסגרת הכתומה</div>
     <div style="display:flex;gap:8px;margin-top:8px;">
       <button class="btn-primary" style="flex:1;" onclick="captureAndRecognize('${targetInputId}')">📸 צלמי את המספר</button>
       <button class="btn-ghost" onclick="stopScanner()">ביטול</button>
@@ -43,22 +43,33 @@ async function captureAndRecognize(targetInputId){
   const statusEl = document.getElementById('ocrStatus');
   if(!video || !video.videoWidth) return;
 
-  // גזירת האזור שבתוך המסגרת הכתומה בלבד (80% מהרוחב, 70px גובה, ממורכז)
-  const canvas = document.createElement('canvas');
+  // גזירת האזור שבתוך המסגרת הכתומה (85% מהרוחב, 150px גובה, ממורכז)
+  const cropCanvas = document.createElement('canvas');
   const scaleX = video.videoWidth / video.clientWidth;
   const scaleY = video.videoHeight / video.clientHeight;
-  const cropW = video.clientWidth * 0.8 * scaleX;
-  const cropH = 70 * scaleY;
+  const cropW = video.clientWidth * 0.85 * scaleX;
+  const cropH = 150 * scaleY;
   const cropX = (video.videoWidth - cropW) / 2;
   const cropY = (video.videoHeight - cropH) / 2;
-  canvas.width = cropW;
-  canvas.height = cropH;
-  canvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  cropCanvas.width = cropW;
+  cropCanvas.height = cropH;
+  cropCanvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+  // הגדלה פי 2 - עוזר משמעותית לזיהוי טקסט קטן
+  const canvas = document.createElement('canvas');
+  canvas.width = cropW * 2;
+  canvas.height = cropH * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(cropCanvas, 0, 0, canvas.width, canvas.height);
 
   if(statusEl) statusEl.textContent = 'מזהה מספר...';
   try{
     await loadTesseract();
-    const { data } = await Tesseract.recognize(canvas, 'eng', { tessedit_char_whitelist: '0123456789' });
+    const { data } = await Tesseract.recognize(canvas, 'eng', {
+      tessedit_char_whitelist: '0123456789',
+      tessedit_pageseg_mode: '6'
+    });
     const digits = (data.text || '').replace(/\D/g, '');
     if(digits){
       const el = document.getElementById(targetInputId);
