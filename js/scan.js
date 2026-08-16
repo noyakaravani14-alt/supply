@@ -22,7 +22,7 @@ async function startScan(targetInputId){
       <video id="ocrVideo" autoplay playsinline muted style="width:100%;display:block;border-radius:8px;background:#000;"></video>
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:85%;height:150px;border:2px solid var(--accent);border-radius:6px;pointer-events:none;"></div>
     </div>
-    <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin-top:6px;">מקמי את כל התווית (הברקוד + המספר מתחתיו) בתוך המסגרת הכתומה</div>
+    <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin-top:6px;">מקמי כך שהמספר המודפס יהיה בחלק התחתון של המסגרת הכתומה</div>
     <div style="display:flex;gap:8px;margin-top:8px;">
       <button class="btn-primary" style="flex:1;" onclick="captureAndRecognize('${targetInputId}')">📸 צלמי את המספר</button>
       <button class="btn-ghost" onclick="stopScanner()">ביטול</button>
@@ -55,20 +55,36 @@ async function captureAndRecognize(targetInputId){
   cropCanvas.height = cropH;
   cropCanvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-  // הגדלה פי 2 - עוזר משמעותית לזיהוי טקסט קטן
+  // המספר המודפס בדרך כלל יושב ברצועה התחתונה של התווית (מתחת לברקוד עצמו) -
+  // גוזרים רק אותה, כדי שקווי הברקוד לא "יבלבלו" את הזיהוי
+  const stripCanvas = document.createElement('canvas');
+  const stripH = cropH * 0.4;
+  stripCanvas.width = cropW;
+  stripCanvas.height = stripH;
+  stripCanvas.getContext('2d').drawImage(cropCanvas, 0, cropH - stripH, cropW, stripH, 0, 0, cropW, stripH);
+
+  // הגדלה פי 3 + המרה לשחור-לבן עם ניגודיות גבוהה - עוזר משמעותית לזיהוי טקסט קטן
   const canvas = document.createElement('canvas');
-  canvas.width = cropW * 2;
-  canvas.height = cropH * 2;
+  canvas.width = stripCanvas.width * 3;
+  canvas.height = stripCanvas.height * 3;
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(cropCanvas, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(stripCanvas, 0, 0, canvas.width, canvas.height);
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const px = imgData.data;
+  for(let i=0;i<px.length;i+=4){
+    const gray = 0.3*px[i] + 0.59*px[i+1] + 0.11*px[i+2];
+    const bw = gray > 130 ? 255 : 0;
+    px[i]=px[i+1]=px[i+2]=bw;
+  }
+  ctx.putImageData(imgData, 0, 0);
 
   if(statusEl) statusEl.textContent = 'מזהה מספר...';
   try{
     await loadTesseract();
     const { data } = await Tesseract.recognize(canvas, 'eng', {
       tessedit_char_whitelist: '0123456789',
-      tessedit_pageseg_mode: '6'
+      tessedit_pageseg_mode: '7'
     });
     const digits = (data.text || '').replace(/\D/g, '');
     if(digits){
