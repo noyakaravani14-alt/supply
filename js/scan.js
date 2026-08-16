@@ -25,7 +25,7 @@ function startScan(targetInputId){
     verbose: false
   });
   html5Scanner.start(
-    { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+    { facingMode: "environment" },
     { fps: 10, qrbox: { width: 260, height: 110 }, experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
     (decodedText)=>{
       const el = document.getElementById(targetInputId);
