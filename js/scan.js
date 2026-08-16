@@ -7,9 +7,9 @@ function startScan(targetInputId){
     showToast('סורק הברקוד לא נטען - ניתן להזין ידנית');
     return;
   }
+  stopScanner();
   box.style.display = 'block';
   box.innerHTML = '<div id="qr-reader" style="width:100%"></div>';
-  stopScanner();
   html5Scanner = new Html5Qrcode("qr-reader");
   html5Scanner.start(
     { facingMode: "environment" },
