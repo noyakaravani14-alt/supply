@@ -29,6 +29,7 @@ function render(){
   if(activeTab === WAREHOUSE_ID) renderWarehousePanel();
   else if(activeTab === '__history__') renderHistoryPanel();
   else if(activeTab === '__search__') renderSearchPanel();
+  else if(activeTab === '__contacts__') renderContactsPanel();
   else renderLocationPanel(activeTab);
 }
 
@@ -39,6 +40,7 @@ function renderTabbar(){
     html += `<div class="tab ${activeTab===loc?'active':''}" onclick="setTab('${escAttr(loc)}')">${esc(loc)} <span class="count">${totalUnitsIn(loc)}</span></div>`;
   });
   html += `<div class="tab ${activeTab==='__search__'?'active':''}" onclick="setTab('__search__')" style="font-family:'Rubik',sans-serif;">🔎 חיפוש לפי בעל תפקיד</div>`;
+  html += `<div class="tab ${activeTab==='__contacts__'?'active':''}" onclick="setTab('__contacts__')" style="font-family:'Rubik',sans-serif;">👤 אנשי קשר</div>`;
   html += `<div class="tab ${activeTab==='__history__'?'active':''}" onclick="setTab('__history__')" style="font-family:'Rubik',sans-serif;">🕘 היסטוריה</div>`;
   html += `<button class="tab-add" onclick="promptAddLocation()">+ מיקום</button>`;
   bar.innerHTML = html;
@@ -58,7 +60,7 @@ function renderWarehousePanel(){
       <td data-label="דגם">${esc(it.model)||'—'}</td>
       <td data-label="יצרן">${esc(it.manufacturer)||'—'}</td>
       <td data-label="נקלט" class="mono">${received}</td>
-      <td data-label="מופק" class="mono">${issued}</td>
+      <td data-label="נופק" class="mono">${issued}</td>
       <td data-label="כמות במלאי"><b class="mono">${qty}</b></td>
       <td data-label="נקודת הזמנה" class="mono">${it.reorderPoint||'—'}</td>
       <td data-label=""><button class="btn-ghost btn-sm" onclick="editItem('${it.id}')">עריכה</button></td>
@@ -75,7 +77,7 @@ function renderWarehousePanel(){
     </div>
     ${state.items.length===0?`<div class="empty"><div class="big">🗄️</div>אין פריטים עדיין. התחילי בקליטת ציוד.</div>`:`
     <table><thead><tr>
-      <th>מק"ט</th><th>שם פריט</th><th>דגם</th><th>יצרן</th><th>נקלט</th><th>מופק</th><th>כמות במלאי</th><th>נק' הזמנה</th><th></th>
+      <th>מק"ט</th><th>שם פריט</th><th>דגם</th><th>יצרן</th><th>נקלט</th><th>נופק</th><th>כמות במלאי</th><th>נק' הזמנה</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>`}
   `;
 }
@@ -91,6 +93,7 @@ function renderLocationPanel(loc){
       <td data-label="מס' סיריאלי"><span class="tag">${esc(u.serial)||'—'}</span></td>
       <td data-label="מחלקה">${esc(u.department)||'—'}</td>
       <td data-label="בעל תפקיד">${esc(u.holderName)||'—'}</td>
+      <td data-label="אימייל">${esc(u.holderEmail)||'—'}</td>
       <td data-label="טלפון">${esc(u.holderPhone)||'—'}</td>
       <td data-label="תאריך קבלה">${fmtDate(u.dateReceived)}</td>
       <td data-label="תוקף אחריות">${fmtDate(u.warrantyExpiry)}</td>
@@ -107,7 +110,7 @@ function renderLocationPanel(loc){
     </div>
     ${units.length===0?`<div class="empty"><div class="big">📍</div>אין עדיין ציוד רשום כאן.</div>`:`
     <table><thead><tr>
-      <th>מק"ט</th><th>שם פריט</th><th>דגם</th><th>סיריאלי</th><th>מחלקה</th><th>בעל תפקיד</th><th>טלפון</th><th>קבלה</th><th>אחריות</th><th></th>
+      <th>מק"ט</th><th>שם פריט</th><th>דגם</th><th>סיריאלי</th><th>מחלקה</th><th>בעל תפקיד</th><th>אימייל</th><th>טלפון</th><th>קבלה</th><th>אחריות</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>`}
   `;
 }
@@ -142,7 +145,8 @@ function renderSearchPanel(){
       <div><h2>חיפוש ציוד לפי בעל תפקיד</h2><div class="desc">מחפש בכל הסניפים יחד</div></div>
     </div>
     <div class="search-wrap">
-      <input id="searchHolder" type="text" placeholder="הקלידי שם (למשל: דיאנה, רפאל פליגל...)" oninput="runHolderSearch()">
+      <input id="searchHolder" type="text" list="holdersList" placeholder="הקלידי שם (למשל: דיאנה, רפאל פליגל...)" oninput="runHolderSearch()">
+      <datalist id="holdersList">${state.holders.map(h=>`<option value="${escAttr(h.name)}">`).join('')}</datalist>
     </div>
     <div id="searchResults"></div>
   `;
@@ -173,6 +177,7 @@ function runHolderSearch(){
   const rows = results.map(u=>`
     <tr>
       <td data-label="בעל תפקיד"><b>${esc(u.holderName)}</b></td>
+      <td data-label="אימייל">${esc(u.holderEmail)||'—'}</td>
       <td data-label="מיקום"><span class="tag">${esc(u.loc)}</span></td>
       <td data-label="שם פריט">${esc(u.name)}</td>
       <td data-label="דגם">${esc(u.model)||'—'}</td>
@@ -184,8 +189,27 @@ function runHolderSearch(){
   box.innerHTML = `
     <div class="desc" style="margin-bottom:8px;">${results.length} פריטים נמצאו</div>
     <table><thead><tr>
-      <th>בעל תפקיד</th><th>מיקום</th><th>שם פריט</th><th>דגם</th><th>סיריאלי</th><th>מחלקה</th><th>טלפון</th><th></th>
+      <th>בעל תפקיד</th><th>אימייל</th><th>מיקום</th><th>שם פריט</th><th>דגם</th><th>סיריאלי</th><th>מחלקה</th><th>טלפון</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>`;
 }
+function renderContactsPanel(){
+  const panel = document.getElementById('panel');
+  const rows = state.holders.map(h=>`
+    <tr>
+      <td data-label="שם"><b>${esc(h.name)}</b></td>
+      <td data-label="אימייל">${esc(h.email)||'—'}</td>
+      <td data-label=""><button class="btn-ghost btn-sm" onclick="editHolder('${h.id}')">עריכה</button> <button class="btn-ghost btn-sm" onclick="deleteHolder('${h.id}')">הסרה</button></td>
+    </tr>`).join('');
+  panel.innerHTML = `
+    <div class="panel-head">
+      <div><h2>אנשי קשר</h2><div class="desc">מאגר שמות ואימיילים לקישור לבעלי תפקיד בקליטה/ניפוק</div></div>
+      <div class="actions"><button class="btn-primary" onclick="editHolder()">+ איש קשר חדש</button></div>
+    </div>
+    ${state.holders.length===0?`<div class="empty"><div class="big">👤</div>עדיין אין אנשי קשר במאגר.</div>`:`
+    <table><thead><tr><th>שם</th><th>אימייל</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table>`}
+  `;
+}
+
 function esc(s){ return (s===undefined||s===null) ? '' : String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escAttr(s){ return esc(s).replace(/'/g,"&#39;"); }
