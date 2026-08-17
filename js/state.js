@@ -19,6 +19,7 @@ function showToast(msg){
 
 
 function itemById(id){ return state.items.find(it=>it.id===id); }
+function holderById(id){ return state.holders.find(h=>h.id===id); }
 function unitsOf(loc){ return state.branchUnits[loc] || []; }
 function totalUnitsIn(loc){ return unitsOf(loc).length; }
 function isLow(item){ return item.reorderPoint>0 && (state.warehouseQty[item.id]||0) <= item.reorderPoint; }
