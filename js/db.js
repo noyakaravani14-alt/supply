@@ -1,16 +1,18 @@
 // טעינה מ-Supabase ופעולות כתיבה (insert/update/delete)
 async function loadData(){
   try{
-    const [itemsRes, locsRes, unitsRes, txRes] = await Promise.all([
+    const [itemsRes, locsRes, unitsRes, txRes, holdersRes] = await Promise.all([
       sb.from('items').select('*'),
       sb.from('locations').select('name').order('created_at'),
       sb.from('branch_units').select('*'),
-      sb.from('transactions').select('*').order('created_at', {ascending:false})
+      sb.from('transactions').select('*').order('created_at', {ascending:false}),
+      sb.from('holders').select('*').order('name')
     ]);
     if(itemsRes.error) throw itemsRes.error;
     if(locsRes.error) throw locsRes.error;
     if(unitsRes.error) throw unitsRes.error;
     if(txRes.error) throw txRes.error;
+    if(holdersRes.error) throw holdersRes.error;
 
     const warehouseQty = {}, warehouseReceived = {}, warehouseIssued = {};
     const items = itemsRes.data.map(r=>{
@@ -20,13 +22,15 @@ async function loadData(){
       return {id:r.id, sku:r.sku||'', name:r.name, model:r.model||'', manufacturer:r.manufacturer||'', reorderPoint:r.reorder_point||0};
     });
 
+    const holders = holdersRes.data.map(r=>({id:r.id, name:r.name, email:r.email||''}));
+
     const branchUnits = {};
     unitsRes.data.forEach(r=>{
       if(!branchUnits[r.location]) branchUnits[r.location] = [];
       branchUnits[r.location].push({
         id:r.id, sku:r.sku||'', name:r.name, model:r.model||'', manufacturer:r.manufacturer||'',
-        serial:r.serial||'', department:r.department||'', holderName:r.holder_name||'',
-        holderPhone:r.holder_phone||'', dateReceived:r.date_received||'', warrantyExpiry:r.warranty_expiry||''
+        serial:r.serial||'', department:r.department||'', holderId:r.holder_id||'', holderName:r.holder_name||'',
+        holderEmail:r.holder_email||'', holderPhone:r.holder_phone||'', dateReceived:r.date_received||'', warrantyExpiry:r.warranty_expiry||''
       });
     });
 
@@ -35,7 +39,7 @@ async function loadData(){
     state = {
       items, warehouseQty, warehouseReceived, warehouseIssued,
       locations: locsRes.data.map(r=>r.name),
-      branchUnits, log
+      branchUnits, log, holders
     };
   }catch(e){
     console.error('Supabase load error', e);
@@ -65,7 +69,7 @@ async function dbInsertLocation(name){
 async function dbInsertBranchUnit(loc, u){
   const {error} = await sb.from('branch_units').insert({
     id:u.id, location:loc, sku:u.sku, name:u.name, model:u.model, manufacturer:u.manufacturer,
-    serial:u.serial, department:u.department, holder_name:u.holderName, holder_phone:u.holderPhone,
+    serial:u.serial, department:u.department, holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone,
     date_received: u.dateReceived||null, warranty_expiry: u.warrantyExpiry||null
   });
   if(error){ console.error(error); showToast('שגיאה בשמירת היחידה'); }
@@ -73,7 +77,7 @@ async function dbInsertBranchUnit(loc, u){
 async function dbUpdateBranchUnit(u){
   const {error} = await sb.from('branch_units').update({
     sku:u.sku, name:u.name, model:u.model, manufacturer:u.manufacturer, serial:u.serial, department:u.department,
-    holder_name:u.holderName, holder_phone:u.holderPhone, date_received:u.dateReceived||null, warranty_expiry:u.warrantyExpiry||null
+    holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone, date_received:u.dateReceived||null, warranty_expiry:u.warrantyExpiry||null
   }).eq('id', u.id);
   if(error){ console.error(error); showToast('שגיאה בשמירה'); } else showToast('נשמר');
 }
@@ -84,4 +88,16 @@ async function dbDeleteBranchUnit(id){
 async function dbInsertTransaction(entry){
   const {error} = await sb.from('transactions').insert({type:entry.type, item_name:entry.name, qty:entry.qty, from_location:entry.from||'', to_location:entry.to||'', serial:entry.serial||''});
   if(error){ console.error(error); showToast('שגיאה בשמירת התנועה'); }
+}
+async function dbInsertHolder(h){
+  const {error} = await sb.from('holders').insert({id:h.id, name:h.name, email:h.email||''});
+  if(error){ console.error(error); showToast('שגיאה בהוספת איש קשר'); }
+}
+async function dbUpdateHolder(h){
+  const {error} = await sb.from('holders').update({name:h.name, email:h.email||''}).eq('id', h.id);
+  if(error){ console.error(error); showToast('שגיאה בשמירה'); } else showToast('נשמר');
+}
+async function dbDeleteHolder(id){
+  const {error} = await sb.from('holders').delete().eq('id', id);
+  if(error){ console.error(error); showToast('שגיאה במחיקה - ייתכן שאיש הקשר משויך ליחידות קיימות'); }
 }
