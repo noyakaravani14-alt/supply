@@ -82,11 +82,17 @@ function renderWarehousePanel(){
   `;
 }
 
+function lookupRealSku(name, model){
+  const match = state.items.find(it => it.name===name && (it.model||'')===(model||''));
+  return match ? match.sku : '';
+}
+
 function renderLocationPanel(loc){
   const panel = document.getElementById('panel');
   const units = unitsOf(loc);
   const rows = units.map(u=>`
     <tr>
+      <td data-label="מק&quot;ט"><span class="mono">${esc(lookupRealSku(u.name, u.model))||'—'}</span></td>
       <td data-label="מק&quot;ט ארגוני"><span class="mono">${esc(u.sku)||'—'}</span></td>
       <td data-label="שם פריט">${esc(u.name)}</td>
       <td data-label="דגם">${esc(u.model)||'—'}</td>
@@ -110,7 +116,7 @@ function renderLocationPanel(loc){
     </div>
     ${units.length===0?`<div class="empty"><div class="big">📍</div>אין עדיין ציוד רשום כאן.</div>`:`
     <table><thead><tr>
-      <th>מק"ט ארגוני</th><th>שם פריט</th><th>דגם</th><th>סיריאלי</th><th>מחלקה</th><th>בעל תפקיד</th><th>אימייל</th><th>טלפון</th><th>קבלה</th><th>אחריות</th><th></th>
+      <th>מק"ט</th><th>מק"ט ארגוני</th><th>שם פריט</th><th>דגם</th><th>סיריאלי</th><th>מחלקה</th><th>בעל תפקיד</th><th>אימייל</th><th>טלפון</th><th>קבלה</th><th>אחריות</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>`}
   `;
 }
