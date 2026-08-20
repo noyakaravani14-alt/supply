@@ -202,17 +202,20 @@ function unitCardHtml(prefix, i){
       <div class="field"><label>מספר סיריאלי #${i+1}</label>
         <div class="scan-row"><input id="${prefix}_serial_${i}" type="text" class="mono"><button class="btn-secondary btn-sm" onclick="startScan('${prefix}_serial_${i}')">📷</button></div>
       </div>
+      <div class="field"><label>מק"ט ארגוני</label><input id="${prefix}_orgsku_${i}" type="text" class="mono"></div>
+    </div>
+    <div class="row2">
       <div class="field"><label>מחלקה</label><input id="${prefix}_dept_${i}" type="text"></div>
-    </div>
-    <div class="row2">
       <div class="field"><label>שם בעל תפקיד</label><input id="${prefix}_holder_${i}" type="text" list="holdersDatalist" oninput="autofillHolderEmail('${prefix}',${i})"></div>
-      <div class="field"><label>אימייל בעל תפקיד</label><input id="${prefix}_email_${i}" type="text"></div>
     </div>
     <div class="row2">
+      <div class="field"><label>אימייל בעל תפקיד</label><input id="${prefix}_email_${i}" type="text"></div>
       <div class="field"><label>טלפון בעל תפקיד</label><input id="${prefix}_phone_${i}" type="tel"></div>
-      <div class="field"><label>תאריך קבלת ציוד</label><input id="${prefix}_date_${i}" type="date" value="${todayISO()}"></div>
     </div>
-    <div class="field"><label>תוקף אחריות</label><input id="${prefix}_warranty_${i}" type="date"></div>
+    <div class="row2">
+      <div class="field"><label>תאריך קבלת ציוד</label><input id="${prefix}_date_${i}" type="date" value="${todayISO()}"></div>
+      <div class="field"><label>תוקף אחריות</label><input id="${prefix}_warranty_${i}" type="date"></div>
+    </div>
   </div>`;
 }
 
@@ -272,6 +275,7 @@ async function submitReceive(){
       const unit = {
         id: uid(), sku: item.sku, name:item.name, model:item.model, manufacturer:item.manufacturer,
         serial: (document.getElementById(`rc_serial_${i}`)||{}).value?.trim() || '',
+        orgSku: (document.getElementById(`rc_orgsku_${i}`)||{}).value?.trim() || '',
         department: (document.getElementById(`rc_dept_${i}`)||{}).value?.trim() || '',
         holderId: resolved.id, holderName, holderEmail: resolved.email || holderEmailInput,
         holderPhone: (document.getElementById(`rc_phone_${i}`)||{}).value?.trim() || '',
@@ -351,6 +355,7 @@ async function submitTransfer(){
     const unit = {
       id: uid(), sku:item.sku, name:item.name, model:item.model, manufacturer:item.manufacturer,
       serial: (document.getElementById(`tr_serial_${i}`)||{}).value?.trim() || '',
+      orgSku: (document.getElementById(`tr_orgsku_${i}`)||{}).value?.trim() || '',
       department: (document.getElementById(`tr_dept_${i}`)||{}).value?.trim() || '',
       holderId: resolved.id, holderName, holderEmail: resolved.email || holderEmailInput,
       holderPhone: (document.getElementById(`tr_phone_${i}`)||{}).value?.trim() || '',
@@ -388,6 +393,7 @@ function editUnit(loc, unitId){
       <div class="scan-row"><input id="eu_serial" type="text" class="mono" value="${escAttr(u.serial)}"><button class="btn-secondary" onclick="startScan('eu_serial')">📷</button></div>
       <div id="scanBox"></div>
     </div>
+    <div class="field"><label>מק"ט ארגוני</label><input id="eu_orgsku" type="text" class="mono" value="${escAttr(u.orgSku)}"></div>
     <div class="row2">
       <div class="field"><label>מחלקה</label><input id="eu_department" type="text" value="${escAttr(u.department)}"></div>
       <div class="field"><label>שם בעל תפקיד</label><input id="eu_holder" type="text" list="holdersDatalist" value="${escAttr(u.holderName)}" oninput="autofillHolderEmail('eu','')"></div>
@@ -415,6 +421,7 @@ async function saveUnitEdit(loc, unitId){
   u.manufacturer = document.getElementById('eu_manufacturer').value.trim();
   u.sku = document.getElementById('eu_sku').value.trim();
   u.serial = document.getElementById('eu_serial').value.trim();
+  u.orgSku = document.getElementById('eu_orgsku').value.trim();
   u.department = document.getElementById('eu_department').value.trim();
   const holderName = document.getElementById('eu_holder').value.trim();
   const holderEmailInput = document.getElementById('eu_email').value.trim();
