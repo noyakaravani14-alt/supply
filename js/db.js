@@ -29,7 +29,7 @@ async function loadData(){
       if(!branchUnits[r.location]) branchUnits[r.location] = [];
       branchUnits[r.location].push({
         id:r.id, sku:r.sku||'', name:r.name, model:r.model||'', manufacturer:r.manufacturer||'',
-        serial:r.serial||'', department:r.department||'', orgSku:r.org_sku||'', holderId:r.holder_id||'', holderName:r.holder_name||'',
+        serial:r.serial||'', department:r.department||'', holderId:r.holder_id||'', holderName:r.holder_name||'',
         holderEmail:r.holder_email||'', holderPhone:r.holder_phone||'', dateReceived:r.date_received||'', warrantyExpiry:r.warranty_expiry||''
       });
     });
@@ -69,7 +69,7 @@ async function dbInsertLocation(name){
 async function dbInsertBranchUnit(loc, u){
   const {error} = await sb.from('branch_units').insert({
     id:u.id, location:loc, sku:u.sku, name:u.name, model:u.model, manufacturer:u.manufacturer,
-    serial:u.serial, department:u.department, org_sku:u.orgSku||'', holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone,
+    serial:u.serial, department:u.department, holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone,
     date_received: u.dateReceived||null, warranty_expiry: u.warrantyExpiry||null
   });
   if(error){ console.error(error); showToast('שגיאה בשמירת היחידה'); }
@@ -77,7 +77,7 @@ async function dbInsertBranchUnit(loc, u){
 async function dbUpdateBranchUnit(u){
   const {error} = await sb.from('branch_units').update({
     sku:u.sku, name:u.name, model:u.model, manufacturer:u.manufacturer, serial:u.serial, department:u.department,
-    holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone, org_sku:u.orgSku||'', date_received:u.dateReceived||null, warranty_expiry:u.warrantyExpiry||null
+    holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone, date_received:u.dateReceived||null, warranty_expiry:u.warrantyExpiry||null
   }).eq('id', u.id);
   if(error){ console.error(error); showToast('שגיאה בשמירה'); } else showToast('נשמר');
 }
