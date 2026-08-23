@@ -3,7 +3,7 @@
 Object.assign(window, {setTab, promptAddLocation, editItem, saveItemEdit, openReceiveModal, onReceiveItemChange,
   onReceiveQtyChange, submitReceive, openTransferModal, onTransferChange, submitTransfer, removeUnit,
   editUnit, saveUnitEdit, startScan, captureAndRecognize, closeModal, runHolderSearch, viewLocationHistory, submitLogin,
-  editHolder, saveHolder, deleteHolder, autofillHolderEmail, scrollToTop});
+  editHolder, saveHolder, deleteHolder, autofillHolderEmail, scrollToTop, transferHolder, saveHolderTransfer});
 
 /* כפתור "חזרה למעלה" - מופיע רק אחרי שגוללים למטה */
 function scrollToTop(){
