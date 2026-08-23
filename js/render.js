@@ -71,6 +71,7 @@ function renderWarehousePanel(){
     <div class="panel-head">
       <div><h2>מחסן ראשי</h2><div class="desc">כל הפריטים והכמויות הזמינות למשלוח</div></div>
       <div class="actions">
+        <button class="btn-ghost" onclick="exportWarehouseToExcel()">📊 ייצוא ל-Excel</button>
         <button class="btn-secondary" onclick="openReceiveModal()">📥 קליטת ציוד</button>
         <button class="btn-primary" onclick="openTransferModal()">📤 ניפוק / העברה לסניף</button>
       </div>
@@ -110,6 +111,7 @@ function renderLocationPanel(loc){
     <div class="panel-head">
       <div><h2>${esc(loc)}</h2><div class="desc">${units.length} יחידות רשומות במיקום זה · <a href="#" onclick="viewLocationHistory('${escAttr(loc)}');return false;" style="color:var(--accent);">תנועות אחרונות לסניף זה ↗</a></div></div>
       <div class="actions">
+        <button class="btn-ghost" onclick="exportLocationToExcel('${escAttr(loc)}')">📊 ייצוא ל-Excel</button>
         <button class="btn-secondary" onclick="openReceiveModal('${escAttr(loc)}')">📥 קליטה ישירה למיקום זה</button>
         <button class="btn-primary" onclick="openTransferModal('${escAttr(loc)}')">📤 ניפוק ממחסן ליעד זה</button>
       </div>
