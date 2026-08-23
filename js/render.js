@@ -103,7 +103,7 @@ function renderLocationPanel(loc){
       <td data-label="טלפון">${esc(u.holderPhone)||'—'}</td>
       <td data-label="תאריך קבלה">${fmtDate(u.dateReceived)}</td>
       <td data-label="תוקף אחריות">${fmtDate(u.warrantyExpiry)}</td>
-      <td data-label=""><button class="btn-ghost btn-sm" onclick="editUnit('${escAttr(loc)}','${u.id}')">עריכה</button> <button class="btn-ghost btn-sm" onclick="removeUnit('${escAttr(loc)}','${u.id}')">הסרה</button></td>
+      <td data-label=""><button class="btn-ghost btn-sm" onclick="editUnit('${escAttr(loc)}','${u.id}')">עריכה</button> <button class="btn-ghost btn-sm" onclick="transferHolder('${escAttr(loc)}','${u.id}')" title="העברה לעובד חדש">🤝</button> <button class="btn-ghost btn-sm" onclick="removeUnit('${escAttr(loc)}','${u.id}')">הסרה</button></td>
     </tr>`).join('');
 
   panel.innerHTML = `
@@ -129,7 +129,7 @@ function renderHistoryPanel(){
     <tr>
       <td data-label="פריט"><b>${esc(l.name)}</b></td>
       <td data-label="כמות" class="mono">${l.qty}</td>
-      <td data-label="ניפוק">${l.type==='receive'?`<span class="tag">קליטה ← ${esc(l.to)}</span>`:`<span class="tag">${esc(l.to)}</span>`}</td>
+      <td data-label="ניפוק">${l.type==='receive'?`<span class="tag">קליטה ← ${esc(l.to)}</span>`:l.type==='handover'?`<span class="tag">🤝 ${esc(l.fromHolder)} ← ${esc(l.toHolder)}</span>`:`<span class="tag">${esc(l.to)}</span>`}</td>
       <td data-label="מספר סיריאלי" class="mono">${esc(l.serial)||'—'}</td>
       <td data-label="תאריך">${new Date(l.date).toLocaleDateString('he-IL')}</td>
     </tr>`).join('');
