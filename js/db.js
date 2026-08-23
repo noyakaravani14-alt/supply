@@ -34,7 +34,7 @@ async function loadData(){
       });
     });
 
-    const log = txRes.data.map(r=>({id:r.id, date:r.created_at, type:r.type, name:r.item_name, qty:r.qty, from:r.from_location, to:r.to_location, serial:r.serial||''}));
+    const log = txRes.data.map(r=>({id:r.id, date:r.created_at, type:r.type, name:r.item_name, qty:r.qty, from:r.from_location, to:r.to_location, serial:r.serial||'', fromHolder:r.from_holder||'', toHolder:r.to_holder||''}));
 
     state = {
       items, warehouseQty, warehouseReceived, warehouseIssued,
@@ -86,7 +86,7 @@ async function dbDeleteBranchUnit(id){
   if(error){ console.error(error); showToast('שגיאה במחיקה'); }
 }
 async function dbInsertTransaction(entry){
-  const {error} = await sb.from('transactions').insert({type:entry.type, item_name:entry.name, qty:entry.qty, from_location:entry.from||'', to_location:entry.to||'', serial:entry.serial||''});
+  const {error} = await sb.from('transactions').insert({type:entry.type, item_name:entry.name, qty:entry.qty, from_location:entry.from||'', to_location:entry.to||'', serial:entry.serial||'', from_holder:entry.fromHolder||'', to_holder:entry.toHolder||''});
   if(error){ console.error(error); showToast('שגיאה בשמירת התנועה'); }
 }
 async function dbInsertHolder(h){
