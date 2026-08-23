@@ -429,6 +429,59 @@ async function saveUnitEdit(loc, unitId){
   await dbUpdateBranchUnit(u);
   render();
 }
+/* ---------------- HANDOVER (העברה לעובד חדש) ---------------- */
+function transferHolder(loc, unitId){
+  const u = (state.branchUnits[loc]||[]).find(x=>x.id===unitId);
+  if(!u) return;
+  openModal(`
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3>🤝 העברה לעובד חדש</h3>
+    <div class="msub">${esc(u.name)} ${u.model?`(${esc(u.model)})`:''} · ${esc(loc)}</div>
+    <div class="banner">בעל תפקיד נוכחי: <b>${esc(u.holderName)||'—'}</b>${u.holderEmail?` · ${esc(u.holderEmail)}`:''}</div>
+    <div class="row2">
+      <div class="field"><label>שם בעל תפקיד חדש</label><input id="th_holder" type="text" list="holdersDatalist" oninput="autofillHolderEmail('th','')"></div>
+      <div class="field"><label>אימייל בעל תפקיד חדש</label><input id="th_email" type="text"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>טלפון בעל תפקיד חדש</label><input id="th_phone" type="tel"></div>
+      <div class="field"><label>תאריך מסירה</label><input id="th_date" type="date" value="${todayISO()}"></div>
+    </div>
+    ${holdersDatalistHtml()}
+    <div class="actions" style="justify-content:flex-end;margin-top:10px;">
+      <button class="btn-ghost" onclick="closeModal()">ביטול</button>
+      <button class="btn-primary" onclick="saveHolderTransfer('${escAttr(loc)}','${unitId}')">העברה</button>
+    </div>
+  `);
+}
+async function saveHolderTransfer(loc, unitId){
+  const u = (state.branchUnits[loc]||[]).find(x=>x.id===unitId);
+  if(!u) return;
+  const newName = document.getElementById('th_holder').value.trim();
+  if(!newName){ showToast('נא להזין שם בעל תפקיד חדש'); return; }
+  const newEmailInput = document.getElementById('th_email').value.trim();
+  const newPhone = document.getElementById('th_phone').value.trim();
+  const newDate = document.getElementById('th_date').value || todayISO();
+  const resolved = await resolveHolder(newName, newEmailInput);
+
+  const prevName = u.holderName;
+  const prevEmail = u.holderEmail;
+
+  u.holderId = resolved.id;
+  u.holderName = newName;
+  u.holderEmail = resolved.email || newEmailInput;
+  u.holderPhone = newPhone;
+  u.dateReceived = newDate;
+
+  closeModal();
+  await dbUpdateBranchUnit(u);
+  await addLog({
+    type:'handover', name:u.name, qty:1, from:loc, to:loc, serial:u.serial,
+    fromHolder: prevName || '(ללא)', toHolder: newName
+  });
+  render();
+  showToast('הועבר בהצלחה');
+}
+
 async function removeUnit(loc, unitId){
   if(!confirm('להסיר את היחידה הזו מהרשימה?')) return;
   state.branchUnits[loc] = (state.branchUnits[loc]||[]).filter(u=>u.id!==unitId);
