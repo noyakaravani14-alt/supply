@@ -3,7 +3,8 @@
 Object.assign(window, {setTab, promptAddLocation, editItem, saveItemEdit, openReceiveModal, onReceiveItemChange,
   onReceiveQtyChange, submitReceive, openTransferModal, onTransferChange, submitTransfer, removeUnit,
   editUnit, saveUnitEdit, startScan, captureAndRecognize, closeModal, runHolderSearch, viewLocationHistory, submitLogin,
-  editHolder, saveHolder, deleteHolder, autofillHolderEmail, scrollToTop, transferHolder, saveHolderTransfer});
+  editHolder, saveHolder, deleteHolder, autofillHolderEmail, scrollToTop, transferHolder, saveHolderTransfer,
+  exportWarehouseToExcel, exportLocationToExcel});
 
 /* כפתור "חזרה למעלה" - מופיע רק אחרי שגוללים למטה */
 function scrollToTop(){
