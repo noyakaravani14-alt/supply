@@ -72,7 +72,8 @@ async function dbInsertBranchUnit(loc, u){
     serial:u.serial, department:u.department, holder_id:u.holderId||null, holder_name:u.holderName, holder_email:u.holderEmail||'', holder_phone:u.holderPhone,
     date_received: u.dateReceived||null, warranty_expiry: u.warrantyExpiry||null
   });
-  if(error){ console.error(error); showToast('שגיאה בשמירת היחידה'); }
+  if(error){ console.error(error); showToast('שגיאה בשמירת היחידה'); return false; }
+  return true;
 }
 async function dbUpdateBranchUnit(u){
   const {error} = await sb.from('branch_units').update({
