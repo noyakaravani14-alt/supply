@@ -167,7 +167,7 @@ function openReceiveModal(presetLocation){
     ${holdersDatalistHtml()}
     <div class="actions" style="justify-content:flex-end;margin-top:10px;">
       <button class="btn-ghost" onclick="closeModal()">ביטול</button>
-      <button class="btn-primary" onclick="submitReceive()">קליטה</button>
+      <button class="btn-primary" id="rc_submit_btn" onclick="submitReceive()">קליטה</button>
     </div>
   `);
   onReceiveItemChange();
@@ -232,6 +232,11 @@ function autofillHolderEmail(prefix, i){
 }
 
 async function submitReceive(){
+  const btn = document.getElementById('rc_submit_btn');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'שומרת...';
+
   const itemSel = document.getElementById('rc_item').value;
   const dest = document.getElementById('rc_dest').value;
   const qty = Math.max(1, parseInt(document.getElementById('rc_qty').value)||1);
@@ -240,7 +245,7 @@ async function submitReceive(){
 
   if(itemSel === '__new__'){
     const name = document.getElementById('rc_new_name').value.trim();
-    if(!name){ showToast('נא להזין שם פריט'); return; }
+    if(!name){ showToast('נא להזין שם פריט'); btn.disabled=false; btn.textContent='קליטה'; return; }
     item = {
       id: uid(), sku: skuVal,
       name, model: document.getElementById('rc_new_model').value.trim(),
@@ -265,6 +270,7 @@ async function submitReceive(){
   } else {
     if(isNewItem) await dbInsertItem(item);
     if(!state.branchUnits[dest]) state.branchUnits[dest] = [];
+    let saved = 0;
     for(let i=0;i<qty;i++){
       const holderName = (document.getElementById(`rc_holder_${i}`)||{}).value?.trim() || '';
       const holderEmailInput = (document.getElementById(`rc_email_${i}`)||{}).value?.trim() || '';
@@ -278,8 +284,15 @@ async function submitReceive(){
         dateReceived: (document.getElementById(`rc_date_${i}`)||{}).value || todayISO(),
         warrantyExpiry: (document.getElementById(`rc_warranty_${i}`)||{}).value || ''
       };
+      const ok = await dbInsertBranchUnit(dest, unit);
+      if(!ok){
+        showToast(`נשמרו ${saved} מתוך ${qty} יחידות — עצרתי בגלל שגיאה. אפשר לנסות שוב, בלי לחזור על מה שכבר נשמר.`);
+        btn.disabled=false; btn.textContent='קליטה';
+        activeTab = dest; render();
+        return;
+      }
       state.branchUnits[dest].push(unit);
-      await dbInsertBranchUnit(dest, unit);
+      saved++;
       await addLog({type:'receive', name:item.name, qty:1, from:'ספק/חיצוני', to:dest, serial:unit.serial});
     }
   }
@@ -313,7 +326,7 @@ function openTransferModal(presetLocation){
     ${holdersDatalistHtml()}
     <div class="actions" style="justify-content:flex-end;margin-top:10px;">
       <button class="btn-ghost" onclick="closeModal()">ביטול</button>
-      <button class="btn-primary" onclick="submitTransfer()">ניפוק</button>
+      <button class="btn-primary" id="tr_submit_btn" onclick="submitTransfer()">ניפוק</button>
     </div>
   `);
   onTransferChange();
@@ -332,18 +345,24 @@ function onTransferChange(){
 }
 
 async function submitTransfer(){
+  const btn = document.getElementById('tr_submit_btn');
+  if(btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'שומרת...';
+
   const itemId = document.getElementById('tr_item').value;
   const dest = document.getElementById('tr_dest').value;
   const item = itemById(itemId);
   const qty = Math.max(1, parseInt(document.getElementById('tr_qty').value)||1);
   const avail = state.warehouseQty[itemId]||0;
-  if(qty > avail){ showToast('הכמות עולה על הזמין במחסן'); return; }
-  if(!dest){ showToast('נא לבחור יעד'); return; }
+  if(qty > avail){ showToast('הכמות עולה על הזמין במחסן'); btn.disabled=false; btn.textContent='ניפוק'; return; }
+  if(!dest){ showToast('נא לבחור יעד'); btn.disabled=false; btn.textContent='ניפוק'; return; }
 
   state.warehouseQty[itemId] = avail - qty;
   state.warehouseIssued[itemId] = (state.warehouseIssued[itemId]||0) + qty;
   await dbUpdateItem(itemId);
   if(!state.branchUnits[dest]) state.branchUnits[dest] = [];
+  let saved = 0;
   for(let i=0;i<qty;i++){
     const holderName = (document.getElementById(`tr_holder_${i}`)||{}).value?.trim() || '';
     const holderEmailInput = (document.getElementById(`tr_email_${i}`)||{}).value?.trim() || '';
@@ -357,8 +376,15 @@ async function submitTransfer(){
       dateReceived: (document.getElementById(`tr_date_${i}`)||{}).value || todayISO(),
       warrantyExpiry: (document.getElementById(`tr_warranty_${i}`)||{}).value || ''
     };
+    const ok = await dbInsertBranchUnit(dest, unit);
+    if(!ok){
+      showToast(`נשמרו ${saved} מתוך ${qty} יחידות — עצרתי בגלל שגיאה. אפשר לנסות שוב, בלי לחזור על מה שכבר נשמר.`);
+      btn.disabled=false; btn.textContent='ניפוק';
+      activeTab = dest; render();
+      return;
+    }
     state.branchUnits[dest].push(unit);
-    await dbInsertBranchUnit(dest, unit);
+    saved++;
     await addLog({type:'transfer', name:item.name, qty:1, from:'מחסן ראשי', to:dest, serial:unit.serial});
   }
 
