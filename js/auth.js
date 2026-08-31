@@ -70,3 +70,8 @@ async function initApp(){
     renderLoginScreen();
   }
 }
+async function logout(){
+  await sb.auth.signOut();
+  currentUserRole = null;
+  location.reload();
+}
